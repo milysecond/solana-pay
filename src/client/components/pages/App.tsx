@@ -4,55 +4,57 @@ import { SolflareWalletAdapter } from '@solana/wallet-adapter-solflare';
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { PublicKey } from '@solana/web3.js';
-import { AppContext, AppProps as NextAppProps, default as NextApp } from 'next/app';
-import { AppInitialProps } from 'next/dist/shared/lib/utils';
-import { FC, useMemo } from 'react';
-import { DEVNET_ENDPOINT } from '../../utils/constants';
+import { AppProps as NextAppProps } from 'next/app';
+import { useRouter } from 'next/router';
+import { FC, useEffect, useMemo, useState } from 'react';
+import { MAINNET_ENDPOINT, MAINNET_USDC_MINT } from '../../utils/constants';
 import { ConfigProvider } from '../contexts/ConfigProvider';
 import { FullscreenProvider } from '../contexts/FullscreenProvider';
 import { PaymentProvider } from '../contexts/PaymentProvider';
 import { ThemeProvider } from '../contexts/ThemeProvider';
 import { TransactionsProvider } from '../contexts/TransactionsProvider';
 import { SolanaPayLogo } from '../images/SolanaPayLogo';
-import { SOLIcon } from '../images/SOLIcon';
-import css from './App.module.css';
-import { MAINNET_ENDPOINT, MAINNET_USDC_MINT } from '../../utils/constants';
 import { USDCIcon } from '../images/USDCIcon';
+import css from './App.module.css';
 
-interface AppProps extends NextAppProps {
-    host: string;
-    query: {
-        recipient?: string;
-        label?: string;
-        message?: string;
-    };
-}
+const App: FC<NextAppProps> = ({ Component, pageProps }) => {
+    const router = useRouter();
+    const [host, setHost] = useState('pos.milysec.com');
 
-const App: FC<AppProps> & { getInitialProps(appContext: AppContext): Promise<AppInitialProps> } = ({
-    Component,
-    host,
-    query,
-    pageProps,
-}) => {
+    useEffect(() => {
+        setHost(window.location.host);
+    }, []);
+
+    const query = router.query;
     const baseURL = `https://${host}`;
 
-    // If you're testing without a mobile wallet, set this to true to allow a browser wallet to be used.
     const connectWallet = false;
-    const network = WalletAdapterNetwork.Devnet;
+    const network = WalletAdapterNetwork.Mainnet;
     const wallets = useMemo(
         () => (connectWallet ? [new PhantomWalletAdapter(), new SolflareWalletAdapter({ network })] : []),
         [connectWallet, network]
     );
 
-    // Toggle comments on these lines to use transaction requests instead of transfer requests.
     const link = undefined;
-    // const link = useMemo(() => new URL(`${baseURL}/api/`), [baseURL]);
 
-    let recipient: PublicKey | undefined = undefined;
-    const { recipient: recipientParam, label, message } = query;
+    const recipientParam = typeof query.recipient === 'string' ? query.recipient : undefined;
+    const label = typeof query.label === 'string' ? query.label : undefined;
+    const message = typeof query.message === 'string' ? query.message : undefined;
+    const tokenParam = typeof query.token === 'string' ? query.token : typeof query['spl-token'] === 'string' ? query['spl-token'] : undefined;
+
+    let recipient: PublicKey | undefined;
     if (recipientParam && label) {
         try {
             recipient = new PublicKey(recipientParam);
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    let splToken = MAINNET_USDC_MINT;
+    if (tokenParam) {
+        try {
+            splToken = new PublicKey(tokenParam);
         } catch (error) {
             console.error(error);
         }
@@ -62,7 +64,6 @@ const App: FC<AppProps> & { getInitialProps(appContext: AppContext): Promise<App
         <ThemeProvider>
             <FullscreenProvider>
                 {recipient && label ? (
-                    // <ConnectionProvider endpoint={DEVNET_ENDPOINT}>
                     <ConnectionProvider endpoint={MAINNET_ENDPOINT}>
                         <WalletProvider wallets={wallets} autoConnect={connectWallet}>
                             <WalletModalProvider>
@@ -72,15 +73,11 @@ const App: FC<AppProps> & { getInitialProps(appContext: AppContext): Promise<App
                                     recipient={recipient}
                                     label={label}
                                     message={message}
-                                    splToken={MAINNET_USDC_MINT}
+                                    splToken={splToken}
                                     symbol="USDC"
                                     icon={<USDCIcon />}
                                     decimals={6}
                                     minDecimals={2}
-                                    // symbol="SOL"
-                                    // icon={<SOLIcon />}
-                                    // decimals={9}
-                                    // minDecimals={1}
                                     connectWallet={connectWallet}
                                 >
                                     <TransactionsProvider>
@@ -100,22 +97,6 @@ const App: FC<AppProps> & { getInitialProps(appContext: AppContext): Promise<App
             </FullscreenProvider>
         </ThemeProvider>
     );
-};
-
-App.getInitialProps = async (appContext) => {
-    const props = await NextApp.getInitialProps(appContext);
-
-    const { query, req } = appContext.ctx;
-    const recipient = query.recipient as string;
-    const label = query.label as string;
-    const message = query.message || undefined;
-    const host = req?.headers.host || 'localhost:3001';
-
-    return {
-        ...props,
-        query: { recipient, label, message },
-        host,
-    };
 };
 
 export default App;
