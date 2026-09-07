@@ -7,7 +7,7 @@ export const NON_BREAKING_SPACE = '\u00a0';
 // GenesysGo's devnet endpoint doesn't retain historical transactions
 export const DEVNET_ENDPOINT = clusterApiUrl('devnet');
 
-export const MAINNET_ENDPOINT = 'https://solana-mainnet.phantom.tech/';
+export const MAINNET_ENDPOINT = 'https://rpc.aex402.com/';
 // export const MAINNET_ENDPOINT = 'https://api.mainnet-beta.solana.com';
 // export const MAINNET_ENDPOINT = 'https://api.gotsol.store';
 // export const MAINNET_ENDPOINT = 'https://solanapay.genesysgo.net';

@@ -9,6 +9,7 @@
         "clean": "shx rm -rf .next",
         "dev": "next dev",
         "build": "next build",
+        "export": "next build && next export",
         "start": "next start",
         "lint": "next lint",
         "fmt": "prettier --write '{*,**/*}.{js,ts,jsx,tsx,json}'",

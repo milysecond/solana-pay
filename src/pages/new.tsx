@@ -1,1 +1,1 @@
-export { default, getServerSideProps } from '../client/components/pages/NewPage';
+export { default } from '../client/components/pages/NewPage';
